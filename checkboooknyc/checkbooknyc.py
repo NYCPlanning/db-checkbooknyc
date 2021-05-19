@@ -1,11 +1,11 @@
 import requests
 from functools import cached_property
 import xmltodict
-import json
 import aiohttp
 import asyncio
 from random import randint
 from collections import OrderedDict
+import time
 
 
 class CheckbookNYC(object):
@@ -41,31 +41,52 @@ class CheckbookNYC(object):
         _request = f"<request>{_type_of_data}{_records_from}{_max_records}{_search_criteria}</request>"
         return _request
 
-    async def GetRawData(self, session, records_from: int = 1, max_records: int = 1000) -> OrderedDict:
+    async def GetRawData(
+        self, session, records_from: int = 1, max_records: int = 1000
+    ) -> OrderedDict:
         postString = self.build_xmlString(records_from, max_records)
-        print(f"requesting: {postString}")
-        await asyncio.sleep(randint(3, 10))
-        async with session.post(self.endpoint, data=postString) as response:
-            content = await response.text()
-            return xmltodict.parse(content)
+        tries = 1
+        while tries < 10:
+            try:
+                async with session.post(self.endpoint, data=postString) as response:
+                    print(
+                        f"TRY: {tries}, FROM: {records_from} TO {records_from+1000-1}")
+                    content = await response.text()
+                    return xmltodict.parse(content)
+            except:
+                print(
+                    f'FAILED, TRY:{tries}, FROM: {records_from} TO {records_from+1000-1}, retry again ...')
+                tries += 1
+                await asyncio.sleep(randint(10, 20))
 
     @cached_property
     def NumberOfRecords(self) -> int:
         postString = self.build_xmlString(1, 1)
-        resp = requests.post(self.endpoint, data=postString)
-        response = xmltodict.parse(resp.content)
-        number_of_records = int(
-            response["response"]["result_records"]["record_count"])
-        print("total number of records for this search is: ", number_of_records)
-        return number_of_records
+        tries = 1
+        while tries < 10:
+            try:
+                resp = requests.post(self.endpoint, data=postString)
+                response = xmltodict.parse(resp.content)
+                number_of_records = int(
+                    response["response"]["result_records"]["record_count"])
+                print(
+                    f"total number of records for this search is: {number_of_records}")
+                return number_of_records
+            except:
+                tries += 1
+                time.sleep(randint(0, 5))
 
     @cached_property
     def RequestTasks(self):
         number_of_records = self.NumberOfRecords
-        number_of_requests = number_of_records // 1000
-        list_from = [1]
-        list_from += [i * 1000 + 1 for i in range(1, number_of_requests + 1)]
-        return list_from
+        if number_of_records == 0:
+            return []
+        else:
+            number_of_requests = number_of_records // 1000
+            list_from = [1]
+            list_from += [i * 1000 +
+                          1 for i in range(1, number_of_requests + 1)]
+            return list_from
 
     async def main(self):
         tasks = self.RequestTasks
