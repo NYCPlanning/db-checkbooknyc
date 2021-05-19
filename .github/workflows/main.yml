@@ -7,7 +7,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     env:
-      EDM_DATA: ${{ secrets.EDM_DATA }}
+      BUILD_ENGINE: ${{ secrets.BUILD_ENGINE }}
       AWS_S3_ENDPOINT: ${{ secrets.DO_S3_ENDPOINT }}
       AWS_ACCESS_KEY_ID: ${{ secrets.DO_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SECRET_ACCESS_KEY }}
