@@ -1,4 +1,4 @@
-aiohttp["speedups"]
+aiohttp[speedups]
 xmltodict
 SQLAlchemy
 psycopg2
