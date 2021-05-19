@@ -31,7 +31,7 @@ def get_records(d: str):
         results += i['response']['result_records']['spending_transactions']['transaction']
 
     df = pd.DataFrame(results)
-    if df.shape[0] > 0:
+    if df.shape[0] > 0 and "0" not in df.columns:
         if check_table_existence(engine, 'capital_spending'):
             engine.execute(
                 f"DELETE FROM capital_spending WHERE issue_date = '{d}'")
@@ -53,5 +53,5 @@ if __name__ == '__main__':
     dates = [start + datetime.timedelta(days=x)
              for x in range(0, (end-start).days)]
     dates_formated = [d.strftime("%Y-%m-%d") for d in dates]
-    with Pool(5) as p:
+    with Pool(10) as p:
         p.map(get_records, dates_formated)
